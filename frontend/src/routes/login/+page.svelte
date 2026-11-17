@@ -1,7 +1,25 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	let { data, form } = $props();
+	import { goto, invalidateAll } from '$app/navigation';
+	import { api, errMsg } from '$lib/api';
+
+	let { data } = $props();
 	let pending = $state(false);
+	let error = $state('');
+
+	async function submit(e: SubmitEvent) {
+		e.preventDefault();
+		const fd = new FormData(e.currentTarget as HTMLFormElement);
+		pending = true;
+		error = '';
+		const r = await api('/login', { method: 'POST', body: { username: fd.get('username'), password: fd.get('password') } });
+		pending = false;
+		if (!r.ok) {
+			error = errMsg(r.data);
+			return;
+		}
+		await invalidateAll();
+		await goto('/');
+	}
 </script>
 
 <svelte:head><title>Masuk · {data.settings.store_name || 'Dokter Notebook'}</title></svelte:head>
@@ -15,27 +33,17 @@
 				<p class="text-xs text-slate-500">{data.settings.store_tagline}</p>
 			</div>
 		</div>
-		<form
-			method="POST"
-			class="space-y-4"
-			use:enhance={() => {
-				pending = true;
-				return async ({ update }) => {
-					await update();
-					pending = false;
-				};
-			}}
-		>
+		<form class="space-y-4" onsubmit={submit}>
 			<div>
 				<label class="label" for="username">Username</label>
 				<!-- svelte-ignore a11y_autofocus -->
-				<input id="username" name="username" class="input" value={form?.username ?? ''} autofocus required autocomplete="username" />
+				<input id="username" name="username" class="input" autofocus required autocomplete="username" />
 			</div>
 			<div>
 				<label class="label" for="password">Password</label>
 				<input id="password" name="password" type="password" class="input" required autocomplete="current-password" />
 			</div>
-			{#if form?.error}<p class="text-sm text-rose-600">{form.error}</p>{/if}
+			{#if error}<p class="text-sm text-rose-600">{error}</p>{/if}
 			<button class="btn-primary w-full" disabled={pending}>{pending ? 'Masuk...' : 'Masuk'}</button>
 		</form>
 		<p class="text-center text-xs text-slate-500 mt-6">

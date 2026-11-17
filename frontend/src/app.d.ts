@@ -1,10 +1,6 @@
+// Tipe global SvelteKit — aplikasi berjalan sebagai SPA, data user datang dari +layout.ts
 declare global {
-	namespace App {
-		interface Locals {
-			user: { id: number; name: string; username: string; role: 'OWNER' | 'ADMIN' | 'TEKNISI' } | null;
-			token: string | null;
-		}
-	}
+	namespace App {}
 }
 
 export {};

@@ -44,7 +44,8 @@ class UserController extends Controller
         }
         $user->update($d);
         if (!$user->active) {
-            $user->tokens()->delete();
+            // keluarkan dari semua sesi login
+            \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
         }
         return ['message' => 'Pengguna disimpan'];
     }

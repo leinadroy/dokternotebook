@@ -4,14 +4,16 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
-/** Token milik user yang sudah dinonaktifkan langsung ditolak */
+/** Sesi milik user yang sudah dinonaktifkan langsung ditolak */
 class EnsureActive
 {
     public function handle(Request $request, Closure $next)
     {
         if ($request->user() && !$request->user()->active) {
-            $request->user()->currentAccessToken()?->delete();
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
             return response()->json(['message' => 'Akun nonaktif.'], 401);
         }
         return $next($request);

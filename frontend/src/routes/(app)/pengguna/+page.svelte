@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { apiForm, type FormResult } from '$lib/api';
 	import Flash from '$lib/components/Flash.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { ROLE_LABEL } from '$lib/format';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
 	const editing = $derived(data.editing);
 </script>
 
@@ -31,7 +33,18 @@
 			</table>
 		</div>
 		{#key editing?.id}
-			<form method="POST" use:enhance class="card p-5 space-y-3 h-fit">
+			<form
+				use:apiForm={{
+					path: (b) => (b.id ? `/users/${b.id}` : '/users'),
+					method: (b) => (b.id ? 'PUT' : 'POST'),
+					bools: ['active'],
+					done: async (r) => {
+						form = r;
+						if (r && !r.error) await goto('/pengguna');
+					},
+					reset: !editing
+				}}
+				class="card p-5 space-y-3 h-fit">
 				<div class="flex justify-between">
 					<h2 class="font-semibold">{editing ? 'Ubah Pengguna' : 'Tambah Pengguna'}</h2>
 					{#if editing}<a href="/pengguna" class="text-xs text-slate-500">Batal</a>{/if}

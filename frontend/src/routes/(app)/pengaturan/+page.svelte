@@ -1,16 +1,17 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { apiForm, type FormResult } from '$lib/api';
 	import Flash from '$lib/components/Flash.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
 	const s = $derived(data.s);
 </script>
 
 <div class="max-w-3xl">
 	<PageHeader title="Pengaturan" subtitle="Identitas toko, nota, dan notifikasi WhatsApp" />
 	<Flash {form} />
-	<form method="POST" use:enhance={() => async ({ update }) => update({ reset: false })} class="space-y-6">
+	<form use:apiForm={{ path: '/settings', method: 'PUT', numeric: ['default_warranty_days'], done: (r) => (form = r) }} class="space-y-6">
 		<section class="card p-5 grid sm:grid-cols-2 gap-4">
 			<h2 class="font-semibold sm:col-span-2">Identitas Toko</h2>
 			<div><label class="label" for="store_name">Nama toko</label><input id="store_name" name="store_name" class="input" required value={s.store_name ?? ''} /></div>

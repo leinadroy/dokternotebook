@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
             'default_warranty_days' => '30',
             'receipt_footer' => 'Barang yang tidak diambil lebih dari 3 bulan setelah pemberitahuan selesai di luar tanggung jawab kami. Garansi tidak berlaku jika segel rusak / terkena cairan / jatuh.',
             'wa_template' => "Halo {nama}, update servis {nota} ({perangkat}) di {toko}: status sekarang *{status}*. {catatan}\nCek status: {link}",
-            'public_url' => 'http://localhost:5300',
+            'public_url' => '',
             'fonnte_token' => '',
         ];
         foreach ($settings as $key => $value) {

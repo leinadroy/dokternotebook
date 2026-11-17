@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { api, formObj, send, type FormResult } from '$lib/api';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import Flash from '$lib/components/Flash.svelte';
 	import { METHODS } from '$lib/format';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
 	const parent = $derived(data.parent);
 
 	const BRANDS = ['ASUS', 'Acer', 'Lenovo', 'HP', 'Dell', 'Apple', 'MSI', 'Toshiba', 'Samsung', 'Axioo', 'Advan', 'Huawei', 'Xiaomi', 'Lainnya'];
@@ -22,14 +24,27 @@
 	async function lookup(e: Event) {
 		const phone = (e.target as HTMLInputElement).value;
 		if (phone.replace(/\D/g, '').length < 8) return;
-		const r = await fetch(`/api/pelanggan?phone=${encodeURIComponent(phone)}`);
-		const c = r.ok ? await r.json() : null;
+		const r = await api('/customers/lookup', { query: { phone } });
+		const c = r.ok ? r.data : null;
 		if (c) {
 			name = c.name;
 			address = c.address ?? '';
 			email = c.email ?? '';
 			info = `Pelanggan lama · ${c.services_count}x servis`;
 		} else info = 'Pelanggan baru';
+	}
+
+	async function submit(e: SubmitEvent) {
+		e.preventDefault();
+		pending = true;
+		const body = formObj(new FormData(e.currentTarget as HTMLFormElement), ['estimated_cost', 'down_payment', 'warranty_days', 'technician_id', 'parent_id']);
+		const r = await send('/services', 'POST', body);
+		pending = false;
+		if (r?.data?.id) await goto(`/servis/${r.data.id}?baru=1`);
+		else {
+			form = r;
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+		}
 	}
 
 	function toggleAcc(a: string) {
@@ -45,17 +60,7 @@
 	/>
 	<Flash {form} />
 
-	<form
-		method="POST"
-		class="space-y-6"
-		use:enhance={() => {
-			pending = true;
-			return async ({ update }) => {
-				await update({ reset: false });
-				pending = false;
-			};
-		}}
-	>
+	<form class="space-y-6" onsubmit={submit}>
 		{#if parent}<input type="hidden" name="parent_id" value={parent.id} />{/if}
 
 		<section class="card p-5">

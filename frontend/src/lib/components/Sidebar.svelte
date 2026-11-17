@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { api } from '$lib/api';
 	import { ROLE_LABEL } from '$lib/format';
+
+	async function logout() {
+		await api('/logout', { method: 'POST' });
+		await invalidateAll();
+		await goto('/login');
+	}
 
 	let { user, storeName }: { user: { name: string; role: string }; storeName: string } = $props();
 	let open = $state(false);
@@ -58,9 +66,7 @@
 		<div class="text-white/60 text-xs mb-3">{ROLE_LABEL[user.role] || user.role}</div>
 		<div class="flex gap-4">
 			<a href="/akun" class="text-xs text-white/70 hover:text-white">Ganti password</a>
-			<form method="POST" action="/logout">
-				<button class="text-xs text-white/70 hover:text-white cursor-pointer">Keluar →</button>
-			</form>
+			<button class="text-xs text-white/70 hover:text-white cursor-pointer" onclick={logout}>Keluar →</button>
 		</div>
 	</div>
 </aside>

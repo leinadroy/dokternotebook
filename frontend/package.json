@@ -5,13 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 5300",
-    "build": "vite build",
+    "build": "vite build && node scripts/copy-to-laravel.mjs",
     "preview": "vite preview",
-    "start": "node build",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "devDependencies": {
-    "@sveltejs/adapter-node": "^5.2.14",
+    "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.27.0",
     "@sveltejs/vite-plugin-svelte": "^6.1.0",
     "@tailwindcss/vite": "^4.1.14",

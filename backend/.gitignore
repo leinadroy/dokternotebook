@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# hasil build frontend (npm run build di folder frontend)
+/public/_app
+/public/spa.html

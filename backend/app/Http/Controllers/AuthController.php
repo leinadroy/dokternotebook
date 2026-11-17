@@ -2,21 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
+/** Login berbasis sesi (cookie httpOnly) untuk SPA di domain yang sama */
 class AuthController extends Controller
 {
     public function login(Request $r)
     {
         $data = $r->validate(['username' => 'required|string', 'password' => 'required|string']);
-        $user = User::where('username', strtolower(trim($data['username'])))->first();
-        if (!$user || !$user->active || !Hash::check($data['password'], $user->password)) {
+        $ok = Auth::guard('web')->attempt([
+            'username' => strtolower(trim($data['username'])),
+            'password' => $data['password'],
+            'active' => true,
+        ]);
+        if (!$ok) {
             return response()->json(['message' => 'Username atau password salah'], 422);
         }
-        $token = $user->createToken('web', ['*'], now()->addHours(12))->plainTextToken;
-        return ['token' => $token, 'user' => $user->only('id', 'name', 'username', 'role')];
+        $r->session()->regenerate();
+        return ['user' => Auth::guard('web')->user()->only('id', 'name', 'username', 'role')];
     }
 
     public function me(Request $r)
@@ -26,7 +31,9 @@ class AuthController extends Controller
 
     public function logout(Request $r)
     {
-        $r->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $r->session()->invalidate();
+        $r->session()->regenerateToken();
         return ['ok' => true];
     }
 

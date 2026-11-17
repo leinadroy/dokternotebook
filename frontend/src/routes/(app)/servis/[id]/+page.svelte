@@ -1,10 +1,15 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { apiForm, type FormResult } from '$lib/api';
 	import Flash from '$lib/components/Flash.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { METHODS, STATUSES, STATUS_LABEL, isManager, rupiah, tgl, tglJam } from '$lib/format';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
+	const id = $derived(data.detail.service.id);
+	const done = (r: FormResult) => {
+		form = r;
+	};
 	const s = $derived(data.detail.service);
 	const t = $derived(data.detail.totals);
 	const w = $derived(data.detail.warranty);
@@ -12,8 +17,6 @@
 	const isOwner = $derived(data.user?.role === 'OWNER');
 	const editable = $derived(s.status !== 'DIAMBIL' && s.status !== 'BATAL');
 
-	/** Form tidak di-reset agar isian tetap tampil setelah simpan */
-	const keep = () => async ({ update }: { update: (o?: { reset?: boolean }) => Promise<void> }) => update({ reset: false });
 </script>
 
 <svelte:head><title>{s.number} · Servis</title></svelte:head>
@@ -94,7 +97,7 @@
 			<!-- Diagnosa & ubah data -->
 			<details class="card p-5" open={!s.diagnosis}>
 				<summary class="font-semibold cursor-pointer">Diagnosa & Ubah Data</summary>
-				<form method="POST" action="?/details" use:enhance={keep} class="grid sm:grid-cols-2 gap-4 mt-4">
+				<form use:apiForm={{ path: `/services/${id}`, method: 'PUT', numeric: ['estimated_cost', 'warranty_days', 'discount', 'technician_id'], done }} class="grid sm:grid-cols-2 gap-4 mt-4">
 					<div class="sm:col-span-2">
 						<label class="label" for="diagnosis">Hasil diagnosa / tindakan</label>
 						<textarea id="diagnosis" name="diagnosis" rows="3" class="input" value={s.diagnosis ?? ''} placeholder="mis. IC power short, perlu ganti..."></textarea>
@@ -159,8 +162,7 @@
 									<td class="text-right">{rupiah(i.qty * i.price)}</td>
 									<td class="text-right">
 										{#if editable}
-											<form method="POST" action="?/deleteItem" use:enhance>
-												<input type="hidden" name="item_id" value={i.id} />
+											<form use:apiForm={{ path: `/items/${i.id}`, method: 'DELETE', done }}>
 												<button class="text-rose-600 text-xs cursor-pointer">Hapus</button>
 											</form>
 										{/if}
@@ -185,7 +187,7 @@
 
 				{#if editable}
 					<div class="grid md:grid-cols-2 gap-4 p-5 border-t border-slate-200 bg-slate-50">
-						<form method="POST" action="?/addItem" use:enhance class="space-y-2">
+						<form use:apiForm={{ path: `/services/${id}/items`, numeric: ['qty', 'price'], done, reset: true }} class="space-y-2">
 							<input type="hidden" name="type" value="JASA" />
 							<div class="text-sm font-medium">+ Tambah jasa</div>
 							<input name="description" class="input" placeholder="mis. Jasa ganti keyboard" required />
@@ -195,7 +197,7 @@
 								<button class="btn-secondary">Tambah</button>
 							</div>
 						</form>
-						<form method="POST" action="?/addItem" use:enhance class="space-y-2">
+						<form use:apiForm={{ path: `/services/${id}/items`, numeric: ['qty', 'price', 'sparepart_id'], done, reset: true }} class="space-y-2">
 							<input type="hidden" name="type" value="PART" />
 							<div class="text-sm font-medium">+ Pakai sparepart (stok otomatis berkurang)</div>
 							<select name="sparepart_id" class="input" required value="">
@@ -226,8 +228,7 @@
 								<td class="text-right {p.type === 'REFUND' ? 'text-rose-600' : ''}">{p.type === 'REFUND' ? '-' : ''}{rupiah(p.amount)}</td>
 								<td class="text-right">
 									{#if isOwner}
-										<form method="POST" action="?/deletePayment" use:enhance>
-											<input type="hidden" name="payment_id" value={p.id} />
+										<form use:apiForm={{ path: `/payments/${p.id}`, method: 'DELETE', done, confirm: 'Hapus pembayaran ini?' }}>
 											<button class="text-rose-600 text-xs cursor-pointer">Hapus</button>
 										</form>
 									{/if}
@@ -239,7 +240,7 @@
 					</tbody>
 				</table>
 				{#if mgr}
-					<form method="POST" action="?/pay" use:enhance class="flex flex-wrap gap-2 p-4 border-t border-slate-200 bg-slate-50">
+					<form use:apiForm={{ path: `/services/${id}/payments`, numeric: ['amount'], done, reset: true }} class="flex flex-wrap gap-2 p-4 border-t border-slate-200 bg-slate-50">
 						<input name="amount" class="input w-40" placeholder="Nominal" inputmode="numeric" value={t.remaining > 0 ? t.remaining : ''} required />
 						<select name="type" class="input w-auto" value={t.total > 0 ? 'PELUNASAN' : 'DP'}>
 							<option value="DP">DP</option>
@@ -258,7 +259,7 @@
 		<div class="space-y-6">
 			<div class="card p-5">
 				<h2 class="font-semibold mb-3">Ubah Status</h2>
-				<form method="POST" action="?/status" use:enhance class="space-y-3">
+				<form use:apiForm={{ path: `/services/${id}/status`, bools: ['send_wa', 'force'], done, reset: true }} class="space-y-3">
 					<select name="status" class="input" value={s.status}>
 						{#each STATUSES as x}<option value={x}>{STATUS_LABEL[x]}</option>{/each}
 					</select>

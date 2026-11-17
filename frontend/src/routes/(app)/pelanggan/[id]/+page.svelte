@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { apiForm, type FormResult } from '$lib/api';
 	import Flash from '$lib/components/Flash.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
 	import { isManager, rupiah, tgl } from '$lib/format';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
 	const c = $derived(data.detail.customer);
 	const mgr = $derived(isManager(data.user?.role));
 	const wa = $derived(`https://wa.me/${c.phone}?text=${encodeURIComponent(`Halo ${c.name}, `)}`);
@@ -44,7 +45,7 @@
 			</table>
 		</div>
 		{#if mgr}
-			<form method="POST" use:enhance={() => async ({ update }) => update({ reset: false })} class="card p-5 space-y-3 h-fit">
+			<form use:apiForm={{ path: `/customers/${c.id}`, method: 'PUT', done: (r) => (form = r) }} class="card p-5 space-y-3 h-fit">
 				<h2 class="font-semibold">Ubah Data</h2>
 				<div><label class="label" for="name">Nama</label><input id="name" name="name" class="input" value={c.name} required /></div>
 				<div><label class="label" for="phone">No. HP</label><input id="phone" name="phone" class="input" value={c.phone} required /></div>

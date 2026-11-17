@@ -13,6 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Login berbasis cookie sesi untuk SPA di domain yang sama (Sanctum SPA auth + CSRF)
+        $middleware->statefulApi();
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
             'active' => \App\Http\Middleware\EnsureActive::class,

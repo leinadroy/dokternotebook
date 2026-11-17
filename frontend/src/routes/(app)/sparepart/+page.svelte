@@ -1,10 +1,15 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { apiForm, type FormResult } from '$lib/api';
 	import Flash from '$lib/components/Flash.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { isManager, rupiah, tglJam } from '$lib/format';
 
-	let { data, form } = $props();
+	let { data } = $props();
+	let form = $state<FormResult>(null);
+	const done = (r: FormResult) => {
+		form = r;
+	};
 	const mgr = $derived(isManager(data.user?.role));
 	const isOwner = $derived(data.user?.role === 'OWNER');
 	const editing = $derived(data.editing);
@@ -54,9 +59,8 @@
 								<td class="whitespace-nowrap text-right">
 									<a href="/sparepart?edit={p.id}" class="text-brand-600 text-xs mr-2">Ubah/Stok</a>
 									{#if isOwner}
-										<form method="POST" action="?/delete" use:enhance class="inline">
-											<input type="hidden" name="id" value={p.id} />
-											<button class="text-rose-600 text-xs cursor-pointer" onclick={(e) => { if (!confirm(`Hapus ${p.name}?`)) e.preventDefault(); }}>Hapus</button>
+										<form use:apiForm={{ path: `/spareparts/${p.id}`, method: 'DELETE', done, confirm: `Hapus ${p.name}?` }} class="inline">
+											<button class="text-rose-600 text-xs cursor-pointer">Hapus</button>
 										</form>
 									{/if}
 								</td>
@@ -73,7 +77,18 @@
 	<div class="space-y-6">
 		{#if mgr}
 			{#key editing?.id}
-				<form method="POST" action="?/save" use:enhance class="card p-5 space-y-3">
+				<form
+					use:apiForm={{
+						path: (b) => (b.id ? `/spareparts/${b.id}` : '/spareparts'),
+						method: (b) => (b.id ? 'PUT' : 'POST'),
+						numeric: ['buy_price', 'sell_price', 'min_stock', 'stock'],
+						done: async (r) => {
+							form = r;
+							if (r && !r.error && editing) await goto('/sparepart');
+						},
+						reset: !editing
+					}}
+					class="card p-5 space-y-3">
 					<div class="flex justify-between items-center">
 						<h2 class="font-semibold">{editing ? `Ubah: ${editing.name}` : 'Tambah Sparepart'}</h2>
 						{#if editing}<a href="/sparepart" class="text-xs text-slate-500">Batal</a>{/if}
@@ -99,7 +114,7 @@
 			{/key}
 
 			{#if editing}
-				<form method="POST" action="?/stock" use:enhance class="card p-5 space-y-3">
+				<form use:apiForm={{ path: (b) => `/spareparts/${b.id}/stock`, numeric: ['qty'], done, reset: true }} class="card p-5 space-y-3">
 					<h2 class="font-semibold">Mutasi Stok · sekarang {editing.stock}</h2>
 					<input type="hidden" name="id" value={editing.id} />
 					<div class="grid grid-cols-2 gap-3">
