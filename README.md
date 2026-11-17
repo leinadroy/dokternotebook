@@ -2,7 +2,16 @@
 
 Aplikasi web manajemen **service center laptop / notebook** (satu cabang).
 
-**Teknologi:** Next.js 15 (App Router + Server Actions) · React 19 · Prisma 6 · SQLite · Tailwind CSS 4
+| Bagian | Teknologi | Folder |
+|---|---|---|
+| Frontend | SvelteKit 2 (Svelte 5) + Tailwind CSS 4 | [`frontend/`](frontend) |
+| Backend (REST API) | PHP 8.2 · Laravel 12 · Sanctum (token login) | [`backend/`](backend) |
+| Database | MySQL / MariaDB | — |
+
+```
+Browser ──► SvelteKit (SSR + form actions) ──► Laravel API /api/* ──► MySQL
+              token login disimpan di cookie httpOnly
+```
 
 ## Fitur
 
@@ -18,17 +27,43 @@ Aplikasi web manajemen **service center laptop / notebook** (satu cabang).
 | **Laporan** | Pemasukan harian, per metode bayar, pendapatan jasa, laba kotor sparepart, kinerja teknisi, sparepart terlaris, piutang |
 | **WhatsApp** | Tombol WA dengan pesan status otomatis terisi (wa.me, gratis). Opsional kirim otomatis via gateway **Fonnte** (isi token di Pengaturan) |
 | **Cek Status Online** | `/cek`: pelanggan cek progres pakai nomor nota + 4 digit terakhir no HP |
-| **Pengguna & Hak Akses** | Pemilik / Admin-Kasir / Teknisi |
+| **Pengguna & Hak Akses** | Pemilik / Admin-Kasir / Teknisi (dicek di backend) |
 
-## Menjalankan
+## Kebutuhan
 
-```bash
-npm install
-npm run setup      # buat database + data awal
-npm run dev        # buka http://localhost:3100
+- PHP 8.2+ dengan ekstensi `pdo_mysql`, Composer
+- MySQL 5.7+ / MariaDB 10.4+ (mis. dari XAMPP)
+- Node.js 20+
+
+## Menjalankan (development)
+
+**1. Database** — buat database kosong:
+
+```sql
+CREATE DATABASE dokternotebook CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-Akun awal (data seed, **ganti password setelah login**, lewat menu "Ganti password" atau Pengguna):
+**2. Backend** (http://127.0.0.1:8000):
+
+```bash
+cd backend
+composer install
+cp .env.example .env      # sesuaikan DB_USERNAME / DB_PASSWORD
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve
+```
+
+**3. Frontend** (http://localhost:5300), di terminal lain:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env      # API_URL=http://127.0.0.1:8000/api
+npm run dev
+```
+
+Akun awal (data seed, **ganti password setelah login** lewat menu "Ganti password" atau Pengguna):
 
 | Peran | Username | Password |
 |---|---|---|
@@ -36,13 +71,22 @@ Akun awal (data seed, **ganti password setelah login**, lewat menu "Ganti passwo
 | Admin/Kasir | admin | admin123 |
 | Teknisi | budi / andi | teknisi123 |
 
+Reset database ke data awal: `php artisan migrate:fresh --seed` (di folder `backend`).
+
 ## Produksi
 
-1. Ganti `SESSION_SECRET` di `.env` dengan string acak panjang.
-2. `npm run build` lalu `npm start`.
-3. Di **Pengaturan**, isi nama/alamat toko dan **Alamat web aplikasi** (dipakai untuk link & QR cek status).
-4. Backup rutin file database `prisma/dokternotebook.db`.
+- **Backend:** set `APP_ENV=production`, `APP_DEBUG=false`, lalu `php artisan config:cache route:cache`. Arahkan web server (Apache/Nginx) ke `backend/public`.
+- **Frontend:** `npm run build` lalu jalankan `node build` (bisa dengan PM2), set env `API_URL` ke alamat API dan `ORIGIN` ke alamat web, mis. `ORIGIN=https://servis.tokoanda.com`.
+- Di menu **Pengaturan**, isi **Alamat web aplikasi** (dipakai untuk link & QR cek status di nota dan pesan WA).
+- Backup rutin database MySQL (mis. `mysqldump dokternotebook > backup.sql`).
 
-> Jika diakses via HTTP biasa (tanpa HTTPS) di jaringan lokal saat mode produksi, set `INSECURE_COOKIE=1` di `.env` agar login bisa menyimpan cookie.
+## Ringkasan API
 
-Reset database ke data awal: hapus `prisma/dokternotebook.db`, lalu jalankan `npm run setup`.
+Semua endpoint di bawah `/api`, memakai header `Authorization: Bearer <token>` kecuali yang publik.
+
+| Akses | Endpoint |
+|---|---|
+| Publik | `POST /login`, `GET /public/settings`, `GET /public/cek?nota=&hp=` |
+| Semua staf | `GET /me`, `POST /logout`, `POST /me/password`, `GET /dashboard`, `GET /technicians`, `GET /services`, `GET/PUT /services/{id}`, `POST /services/{id}/status`, `POST /services/{id}/items`, `DELETE /items/{id}`, `GET /customers`, `GET /customers/lookup`, `GET /customers/{id}`, `GET /spareparts`, `GET /stock-movements` |
+| Pemilik & Admin | `POST /services`, `POST /services/{id}/payments`, `PUT /customers/{id}`, `POST/PUT /spareparts`, `POST /spareparts/{id}/stock`, `GET /warranty`, `GET /reports` |
+| Pemilik | `DELETE /payments/{id}`, `DELETE /spareparts/{id}`, `GET/POST/PUT /users`, `GET/PUT /settings` |
