@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// role: OWNER | ADMIN | TEKNISI
+model User {
+  id           Int          @id @default(autoincrement())
+  name         String
+  username     String       @unique
+  passwordHash String
+  role         String       @default("ADMIN")
+  phone        String?
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  services     Service[]    @relation("Technician")
+  created      Service[]    @relation("CreatedBy")
+  logs         ServiceLog[]
+  payments     Payment[]
+}
+
+model Customer {
+  id        Int       @id @default(autoincrement())
+  name      String
+  phone     String    @unique
+  address   String?
+  email     String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  services  Service[]
+}
+
+// status: DITERIMA | DIAGNOSA | MENUNGGU_KONFIRMASI | MENUNGGU_SPAREPART | DIKERJAKAN | SELESAI | DIAMBIL | BATAL
+model Service {
+  id                Int           @id @default(autoincrement())
+  number            String        @unique
+  customerId        Int
+  customer          Customer      @relation(fields: [customerId], references: [id])
+  deviceType        String        @default("Laptop")
+  deviceBrand       String
+  deviceModel       String
+  serialNumber      String?
+  devicePassword    String?
+  complaint         String
+  accessories       String?
+  physicalCondition String?
+  status            String        @default("DITERIMA")
+  technicianId      Int?
+  technician        User?         @relation("Technician", fields: [technicianId], references: [id])
+  createdById       Int?
+  createdBy         User?         @relation("CreatedBy", fields: [createdById], references: [id])
+  diagnosis         String?
+  estimatedCost     Int           @default(0)
+  estimatedDone     DateTime?
+  discount          Int           @default(0)
+  warrantyDays      Int           @default(30)
+  notes             String?
+  isWarrantyClaim   Boolean       @default(false)
+  parentId          Int?
+  parent            Service?      @relation("WarrantyClaim", fields: [parentId], references: [id])
+  claims            Service[]     @relation("WarrantyClaim")
+  receivedAt        DateTime      @default(now())
+  finishedAt        DateTime?
+  pickedUpAt        DateTime?
+  updatedAt         DateTime      @updatedAt
+  items             ServiceItem[]
+  logs              ServiceLog[]
+  payments          Payment[]
+  movements         StockMovement[]
+}
+
+// type: JASA | PART
+model ServiceItem {
+  id          Int        @id @default(autoincrement())
+  serviceId   Int
+  service     Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  type        String     @default("JASA")
+  sparepartId Int?
+  sparepart   Sparepart? @relation(fields: [sparepartId], references: [id])
+  description String
+  qty         Int        @default(1)
+  price       Int
+  costPrice   Int        @default(0)
+  createdAt   DateTime   @default(now())
+}
+
+model ServiceLog {
+  id        Int      @id @default(autoincrement())
+  serviceId Int
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  status    String
+  note      String?
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+// method: TUNAI | TRANSFER | QRIS | DEBIT ; type: DP | PELUNASAN | REFUND
+model Payment {
+  id        Int      @id @default(autoincrement())
+  serviceId Int
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  amount    Int
+  method    String   @default("TUNAI")
+  type      String   @default("DP")
+  note      String?
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Sparepart {
+  id        Int             @id @default(autoincrement())
+  sku       String          @unique
+  name      String
+  category  String          @default("Lainnya")
+  buyPrice  Int             @default(0)
+  sellPrice Int             @default(0)
+  stock     Int             @default(0)
+  minStock  Int             @default(1)
+  location  String?
+  createdAt DateTime        @default(now())
+  items     ServiceItem[]
+  movements StockMovement[]
+}
+
+// type: MASUK | KELUAR | PENYESUAIAN
+model StockMovement {
+  id          Int       @id @default(autoincrement())
+  sparepartId Int
+  sparepart   Sparepart @relation(fields: [sparepartId], references: [id], onDelete: Cascade)
+  qty         Int
+  type        String
+  note        String?
+  serviceId   Int?
+  service     Service?  @relation(fields: [serviceId], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
