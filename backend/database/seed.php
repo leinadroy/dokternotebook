@@ -36,6 +36,12 @@ foreach ([
     'wa_template' => "Halo {nama}, update servis {nota} ({perangkat}) di {toko}: status sekarang *{status}*. {catatan}\nCek status: {link}",
     'public_url' => '',
     'fonnte_token' => '',
+    'booking_enabled' => '1',
+    'booking_slots' => '09.00 - 12.00,12.00 - 15.00,15.00 - 18.00',
+    'booking_closed_days' => '0',
+    'booking_pickup' => '1',
+    'booking_intro' => 'Laptop bermasalah? Booking jadwal servis sekarang, tanpa antre. Pengecekan awal gratis dan estimasi biaya jelas sebelum dikerjakan.',
+    'booking_wa_template' => "Halo {nama}, booking servis {kode} di {toko} sudah *dikonfirmasi* untuk {tanggal}, jam {jam} ({metode}). {catatan}\nCek status booking: {link}",
 ] as $k => $v) {
     insert('settings', ['key' => $k, 'value' => $v]);
 }
@@ -75,6 +81,24 @@ if ($demo) {
         'received_at' => $now, 'created_at' => $now, 'updated_at' => $now,
     ]);
     insert('service_logs', ['service_id' => $s2, 'status' => 'DITERIMA', 'note' => 'Unit diterima', 'user_id' => 2, 'created_at' => $now]);
+
+    // Contoh booking online
+    $nextOpen = function (int $plus) {
+        $t = strtotime("+$plus day");
+        while ((int) date('w', $t) === 0) $t = strtotime('+1 day', $t); // lewati Minggu (tutup)
+        return date('Y-m-d', $t);
+    };
+    foreach ([
+        ['Siti Rahma', '6281311223344', 'Lenovo', 'ThinkPad T480', 'Layar / LCD', 'Layar bergaris dan kadang berkedip', 'DATANG', null, $nextOpen(1), '09.00 - 12.00', 'BARU'],
+        ['Dimas Pratama', '6287855667788', 'ASUS', 'ROG Strix G15', 'Panas / kipas berisik', 'Cepat panas saat main game, kipas bunyi keras', 'JEMPUT', 'Jl. Kenanga No. 12, RT 03/RW 05, Kel. Sukamaju', $nextOpen(2), '12.00 - 15.00', 'DIKONFIRMASI'],
+    ] as $i => [$name, $phone, $brand, $model, $type, $complaint, $method, $addr, $date, $time, $st]) {
+        insert('bookings', [
+            'code' => 'BK' . date('ymd') . str_pad((string) ($i + 1), 3, '0', STR_PAD_LEFT), 'name' => $name, 'phone' => $phone,
+            'device_brand' => $brand, 'device_model' => $model, 'problem_type' => $type, 'complaint' => $complaint,
+            'service_method' => $method, 'address' => $addr, 'preferred_date' => $date, 'preferred_time' => $time,
+            'status' => $st, 'handled_by' => $st === 'BARU' ? null : 2, 'created_at' => $now, 'updated_at' => $now,
+        ]);
+    }
 }
 
 echo 'Database siap' . ($demo ? ' (dengan data contoh)' : '') . ".\n";

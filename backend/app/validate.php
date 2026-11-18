@@ -16,6 +16,8 @@ const FIELD_LABELS = [
     'amount' => 'Nominal', 'sku' => 'Kode / SKU', 'qty' => 'Jumlah', 'price' => 'Harga', 'email' => 'Email',
     'store_name' => 'Nama toko', 'public_url' => 'Alamat web', 'description' => 'Deskripsi', 'sparepart_id' => 'Sparepart',
     'new' => 'Password baru', 'old' => 'Password lama', 'status' => 'Status', 'role' => 'Peran', 'category' => 'Kategori',
+    'problem_type' => 'Jenis kerusakan', 'preferred_date' => 'Tanggal', 'preferred_time' => 'Jam', 'service_method' => 'Jenis layanan',
+    'address' => 'Alamat',
 ];
 
 function validate(array $input, array $rules): array

@@ -17,6 +17,7 @@
 		{ href: '/', label: 'Dashboard', icon: 'M3 12l9-9 9 9M5 10v10h14V10' },
 		{ href: '/servis', label: 'Servis', icon: 'M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-.5-.5-2.5z' },
 		{ href: '/servis/baru', label: 'Terima Servis', icon: 'M12 5v14M5 12h14', roles: ['OWNER', 'ADMIN'] },
+		{ href: '/booking-masuk', label: 'Booking Online', icon: 'M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM9 16l2 2 4-4', roles: ['OWNER', 'ADMIN'] },
 		{ href: '/pelanggan', label: 'Pelanggan', icon: 'M16 19a4 4 0 0 0-8 0M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
 		{ href: '/sparepart', label: 'Sparepart & Stok', icon: 'M4 7l8-4 8 4-8 4-8-4zM4 7v10l8 4 8-4V7' },
 		{ href: '/garansi', label: 'Garansi', icon: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z', roles: ['OWNER', 'ADMIN'] },

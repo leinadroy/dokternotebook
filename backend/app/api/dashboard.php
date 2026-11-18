@@ -34,7 +34,26 @@ function api_dashboard(): array
         'overdue' => (int) val("SELECT COUNT(*) FROM services s WHERE s.status IN ($open) AND s.estimated_done < CURDATE() $scope"),
         'recent' => $recent,
         'low_stock' => rows('SELECT id, name, stock, min_stock FROM spareparts WHERE stock <= min_stock ORDER BY stock LIMIT 6'),
+        'bookings' => $isTech ? null : dashboard_bookings(),
     ];
+}
+
+/** Ringkasan booking; null bila tabel booking belum dibuat (update-booking.sql belum diimpor) */
+function dashboard_bookings(): ?array
+{
+    try {
+        return [
+            'new' => (int) val("SELECT COUNT(*) FROM bookings WHERE status = 'BARU'"),
+            'today' => (int) val("SELECT COUNT(*) FROM bookings WHERE preferred_date = CURDATE() AND status IN ('BARU','DIKONFIRMASI')"),
+            'upcoming' => array_map(fn ($b) => ['created_at' => iso($b['created_at'])] + $b, rows(
+                "SELECT id, code, name, device_brand, device_model, problem_type, preferred_date, preferred_time, service_method, status, created_at
+                 FROM bookings WHERE status IN ('BARU','DIKONFIRMASI') AND preferred_date >= CURDATE()
+                 ORDER BY preferred_date, FIELD(status,'BARU','DIKONFIRMASI'), preferred_time LIMIT 6"
+            )),
+        ];
+    } catch (PDOException $e) {
+        return null;
+    }
 }
 
 function api_technicians(): array

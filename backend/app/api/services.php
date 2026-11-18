@@ -77,6 +77,7 @@ function api_services_store(): array
         'warranty_days' => 'nullable|int|min:0|max:3650',
         'notes' => 'nullable|string|max:255',
         'parent_id' => 'nullable|int|exists:services',
+        'booking_id' => 'nullable|int|exists:bookings',
     ]);
     $phone = norm_phone($d['phone']);
     if (strlen($phone) < 8) throw new HttpError(422, 'No. HP tidak valid.');
@@ -122,6 +123,12 @@ function api_services_store(): array
         if (($d['down_payment'] ?? 0) > 0) {
             insert('payments', ['service_id' => $id, 'amount' => $d['down_payment'], 'type' => 'DP', 'method' => $d['dp_method'] ?? 'TUNAI', 'user_id' => $u['id'], 'created_at' => now()]);
         }
+        // Unit datang dari booking online: tandai booking sudah diterima & tautkan ke nota
+        if (!empty($d['booking_id'])) {
+            $code = val('SELECT code FROM bookings WHERE id = ?', [$d['booking_id']]);
+            q("UPDATE bookings SET status = 'DITERIMA', service_id = ?, handled_by = ?, updated_at = ? WHERE id = ?", [$id, $u['id'], now(), $d['booking_id']]);
+            q("UPDATE service_logs SET note = ? WHERE service_id = ?", ["Unit diterima (dari booking online $code)", $id]);
+        }
         return ['id' => $id, 'number' => $number];
     });
     http_response_code(201);
@@ -145,6 +152,7 @@ function api_services_show(int $id): array
     $out['creator'] = $s['created_by'] ? row('SELECT id, name FROM users WHERE id = ?', [$s['created_by']]) : null;
     $out['parent'] = $s['parent_id'] ? row('SELECT id, number FROM services WHERE id = ?', [$s['parent_id']]) : null;
     $out['claims'] = rows('SELECT id, number, status FROM services WHERE parent_id = ? ORDER BY id', [$id]);
+    $out['booking'] = row('SELECT id, code, preferred_date, preferred_time, service_method FROM bookings WHERE service_id = ? LIMIT 1', [$id]);
     $out['items'] = $items;
     $out['payments'] = array_map(fn ($p) => ['user' => $p['user_name'] ? ['name' => $p['user_name']] : null, 'created_at' => iso($p['created_at'])] + $p, $payments);
     $out['logs'] = array_map(fn ($l) => ['user' => $l['user_name'] ? ['name' => $l['user_name']] : null, 'created_at' => iso($l['created_at'])] + $l, $logs);

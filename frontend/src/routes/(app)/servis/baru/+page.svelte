@@ -8,6 +8,9 @@
 	let { data } = $props();
 	let form = $state<FormResult>(null);
 	const parent = $derived(data.parent);
+	const bk = $derived(data.booking);
+	// sumber data unit: klaim garansi (nota lama) atau booking online
+	const unit = $derived(parent ?? (bk ? { device_brand: bk.device_brand, device_model: bk.device_model, complaint: `[${bk.problem_type}] ${bk.complaint}` } : null));
 
 	const BRANDS = ['ASUS', 'Acer', 'Lenovo', 'HP', 'Dell', 'Apple', 'MSI', 'Toshiba', 'Samsung', 'Axioo', 'Advan', 'Huawei', 'Xiaomi', 'Lainnya'];
 	const TYPES = ['Laptop', 'Notebook', 'MacBook', 'Netbook', 'Ultrabook', 'Laptop Gaming', 'PC / AIO', 'Lainnya'];
@@ -37,7 +40,7 @@
 	async function submit(e: SubmitEvent) {
 		e.preventDefault();
 		pending = true;
-		const body = formObj(new FormData(e.currentTarget as HTMLFormElement), ['estimated_cost', 'down_payment', 'warranty_days', 'technician_id', 'parent_id']);
+		const body = formObj(new FormData(e.currentTarget as HTMLFormElement), ['estimated_cost', 'down_payment', 'warranty_days', 'technician_id', 'parent_id', 'booking_id']);
 		const r = await send('/services', 'POST', body);
 		pending = false;
 		if (r?.data?.id) await goto(`/servis/${r.data.id}?baru=1`);
@@ -55,13 +58,18 @@
 
 <div class="max-w-4xl">
 	<PageHeader
-		title={parent ? 'Klaim Garansi' : 'Terima Servis Baru'}
-		subtitle={parent ? `Klaim atas nota ${parent.number} — biaya jasa tidak dikenakan bila kerusakan sama` : 'Isi data pelanggan dan unit yang diterima'}
+		title={parent ? 'Klaim Garansi' : bk ? `Terima Unit dari Booking ${bk.code}` : 'Terima Servis Baru'}
+		subtitle={parent
+			? `Klaim atas nota ${parent.number} — biaya jasa tidak dikenakan bila kerusakan sama`
+			: bk
+				? `Data diisi dari booking online (${bk.preferred_time}). Lengkapi SN, kondisi fisik, dan kelengkapan.`
+				: 'Isi data pelanggan dan unit yang diterima'}
 	/>
 	<Flash {form} />
 
 	<form class="space-y-6" onsubmit={submit}>
 		{#if parent}<input type="hidden" name="parent_id" value={parent.id} />{/if}
+		{#if bk}<input type="hidden" name="booking_id" value={bk.id} />{/if}
 
 		<section class="card p-5">
 			<h2 class="font-semibold mb-4">1. Data Pelanggan</h2>
@@ -97,12 +105,12 @@
 				</div>
 				<div>
 					<label class="label" for="device_brand">Merk *</label>
-					<input id="device_brand" name="device_brand" class="input" list="brands" required value={parent?.device_brand ?? ''} />
+					<input id="device_brand" name="device_brand" class="input" list="brands" required value={unit?.device_brand ?? ''} />
 					<datalist id="brands">{#each BRANDS as b}<option value={b}></option>{/each}</datalist>
 				</div>
 				<div>
 					<label class="label" for="device_model">Tipe / Model *</label>
-					<input id="device_model" name="device_model" class="input" required value={parent?.device_model ?? ''} placeholder="mis. VivoBook X441" />
+					<input id="device_model" name="device_model" class="input" required value={unit?.device_model ?? ''} placeholder="mis. VivoBook X441" />
 				</div>
 				<div>
 					<label class="label" for="serial_number">Serial Number</label>
@@ -118,7 +126,7 @@
 				</div>
 				<div class="sm:col-span-3">
 					<label class="label" for="complaint">Keluhan *</label>
-					<textarea id="complaint" name="complaint" class="input" rows="3" required placeholder="Jelaskan keluhan pelanggan"></textarea>
+					<textarea id="complaint" name="complaint" class="input" rows="3" required placeholder="Jelaskan keluhan pelanggan" value={unit?.complaint ?? ''}></textarea>
 				</div>
 				<div class="sm:col-span-3">
 					<label class="label" for="accessories">Kelengkapan yang dititipkan</label>

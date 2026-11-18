@@ -12,6 +12,7 @@ const STATUS_LABELS = [
 const SETTING_KEYS = [
     'store_name', 'store_tagline', 'store_address', 'store_phone', 'default_warranty_days',
     'receipt_footer', 'wa_template', 'public_url', 'fonnte_token',
+    'booking_enabled', 'booking_slots', 'booking_closed_days', 'booking_pickup', 'booking_intro', 'booking_wa_template',
 ];
 
 function in_list(array $values): string

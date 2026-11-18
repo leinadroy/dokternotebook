@@ -62,6 +62,13 @@ $routes = [
     ['POST', '/api/login', 'api_login'],
     ['GET', '/api/public/settings', 'api_settings_public'],
     ['GET', '/api/public/cek', 'api_public_cek'],
+    ['GET', '/api/public/booking-info', 'api_public_booking_info'],
+    ['POST', '/api/public/booking', 'api_public_booking_store'],
+    ['GET', '/api/public/booking', 'api_public_booking_check'],
+
+    ['GET', '/api/bookings', 'api_bookings_index'],
+    ['GET', '/api/bookings/{id}', 'api_bookings_show'],
+    ['PUT', '/api/bookings/{id}', 'api_bookings_update'],
 
     ['GET', '/api/me', 'api_me'],
     ['POST', '/api/logout', 'api_logout'],
@@ -101,8 +108,11 @@ $routes = [
     ['PUT', '/api/settings', 'api_settings_update'],
 ];
 
-// Semua permintaan yang mengubah data wajib membawa token CSRF
-if (!in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+// Semua permintaan yang mengubah data wajib membawa token CSRF.
+// Pengecualian: kirim booking publik (tanpa login, bisa dari form yang disematkan di situs lain);
+// dilindungi batas per IP + jebakan bot di api_public_booking_store().
+$csrfExempt = $method === 'POST' && $path === '/api/public/booking';
+if (!$csrfExempt && !in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
     try {
         verify_csrf();
     } catch (Throwable $e) {

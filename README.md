@@ -30,6 +30,7 @@ backend/
   app/api/*.php       endpoint per modul
   database/schema.sql struktur tabel
   database/seed.php   isi data awal (CLI)
+  database/update-*.sql  pembaruan database untuk instalasi yang sudah berjalan
   logs/               error.log & file sesi (tidak bisa diakses dari web)
 ```
 
@@ -46,6 +47,7 @@ backend/
 | **Garansi** | Cek masa garansi (berlaku sejak unit diambil), buat klaim garansi yang terhubung ke nota asal |
 | **Laporan** | Pemasukan harian, per metode bayar, pendapatan jasa, laba kotor sparepart, kinerja teknisi, sparepart terlaris, piutang |
 | **WhatsApp** | Tombol WA dengan pesan status otomatis terisi (wa.me, gratis). Opsional kirim otomatis via gateway **Fonnte** (isi token di Pengaturan) |
+| **Booking Online** | Halaman publik `/booking` (landing page + form): pelanggan pilih jenis kerusakan, datang/jemput, tanggal & jam; dapat kode booking & cek status di `/booking/cek`. Staf mengelola di menu Booking Online (konfirmasi + pesan WA, ubah jadwal, batal, "Terima unit" → nota servis otomatis terisi). Bisa disematkan di situs lain lewat `/booking?embed=1` |
 | **Cek Status Online** | `/cek`: pelanggan cek progres pakai nomor nota + 4 digit terakhir no HP |
 | **Pengguna & Hak Akses** | Pemilik / Admin-Kasir / Teknisi (dicek di backend) |
 
@@ -115,7 +117,7 @@ Semua endpoint di bawah `/api`. Login memakai cookie sesi; request yang mengubah
 
 | Akses | Endpoint |
 |---|---|
-| Publik | `GET /health`, `GET /sanctum/csrf-cookie` (di luar /api), `POST /login`, `GET /public/settings`, `GET /public/cek?nota=&hp=` |
+| Publik | `GET /health`, `GET /sanctum/csrf-cookie` (di luar /api), `POST /login`, `GET /public/booking-info`, `POST /public/booking` (tanpa CSRF, dibatasi 5/jam per IP), `GET /public/booking?kode=&hp=`, `GET /public/settings`, `GET /public/cek?nota=&hp=` |
 | Semua staf | `GET /me`, `POST /logout`, `POST /me/password`, `GET /dashboard`, `GET /technicians`, `GET /services`, `GET/PUT /services/{id}`, `POST /services/{id}/status`, `POST /services/{id}/items`, `DELETE /items/{id}`, `GET /customers`, `GET /customers/lookup`, `GET /customers/{id}`, `GET /spareparts`, `GET /stock-movements` |
-| Pemilik & Admin | `POST /services`, `POST /services/{id}/payments`, `PUT /customers/{id}`, `POST/PUT /spareparts`, `POST /spareparts/{id}/stock`, `GET /warranty`, `GET /reports` |
+| Pemilik & Admin | `POST /services`, `POST /services/{id}/payments`, `PUT /customers/{id}`, `POST/PUT /spareparts`, `POST /spareparts/{id}/stock`, `GET /warranty`, `GET /reports`, `GET /bookings`, `GET/PUT /bookings/{id}` |
 | Pemilik | `DELETE /payments/{id}`, `DELETE /spareparts/{id}`, `GET/POST/PUT /users`, `GET/PUT /settings` |

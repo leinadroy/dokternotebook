@@ -2,7 +2,7 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS stock_movements, payments, service_logs, service_items, services, spareparts, customers, settings, users;
+DROP TABLE IF EXISTS bookings, stock_movements, payments, service_logs, service_items, services, spareparts, customers, settings, users;
 
 CREATE TABLE users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -135,6 +135,36 @@ CREATE TABLE stock_movements (
   created_at DATETIME NOT NULL,
   CONSTRAINT stock_movements_sparepart_fk FOREIGN KEY (sparepart_id) REFERENCES spareparts (id) ON DELETE CASCADE,
   CONSTRAINT stock_movements_service_fk FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Booking servis dari halaman publik
+CREATE TABLE bookings (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(20) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(30) NOT NULL,
+  email VARCHAR(255) NULL,
+  device_brand VARCHAR(50) NOT NULL,
+  device_model VARCHAR(100) NULL,
+  problem_type VARCHAR(50) NOT NULL,
+  complaint TEXT NOT NULL,
+  service_method ENUM('DATANG','JEMPUT') NOT NULL DEFAULT 'DATANG',
+  address VARCHAR(500) NULL,
+  preferred_date DATE NOT NULL,
+  preferred_time VARCHAR(30) NOT NULL,
+  status ENUM('BARU','DIKONFIRMASI','DITERIMA','BATAL') NOT NULL DEFAULT 'BARU',
+  staff_note VARCHAR(500) NULL,
+  service_id BIGINT UNSIGNED NULL,
+  handled_by BIGINT UNSIGNED NULL,
+  ip VARCHAR(45) NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NULL,
+  KEY bookings_status_index (status),
+  KEY bookings_date_index (preferred_date),
+  KEY bookings_phone_index (phone),
+  KEY bookings_ip_created_index (ip, created_at),
+  CONSTRAINT bookings_service_fk FOREIGN KEY (service_id) REFERENCES services (id) ON DELETE SET NULL,
+  CONSTRAINT bookings_handled_by_fk FOREIGN KEY (handled_by) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

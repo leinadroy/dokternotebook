@@ -42,6 +42,26 @@ export const STATUS_COLOR: Record<string, string> = {
 	BATAL: 'bg-rose-100 text-rose-700'
 };
 
+export const BOOKING_LABEL: Record<string, string> = {
+	BARU: 'Baru',
+	DIKONFIRMASI: 'Dikonfirmasi',
+	DITERIMA: 'Unit diterima',
+	BATAL: 'Batal'
+};
+
+export const BOOKING_COLOR: Record<string, string> = {
+	BARU: 'bg-amber-100 text-amber-800',
+	DIKONFIRMASI: 'bg-sky-100 text-sky-700',
+	DITERIMA: 'bg-emerald-100 text-emerald-700',
+	BATAL: 'bg-rose-100 text-rose-700'
+};
+
+export const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+/** "2026-11-19" -> "Kamis, 19 Nov 2026" */
+export const tglHari = (d: string | null | undefined) =>
+	d ? new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+
 export const ROLE_LABEL: Record<string, string> = { OWNER: 'Pemilik', ADMIN: 'Admin / Kasir', TEKNISI: 'Teknisi' };
 export const METHODS = ['TUNAI', 'TRANSFER', 'QRIS', 'DEBIT'];
 export const isManager = (role?: string) => role === 'OWNER' || role === 'ADMIN';

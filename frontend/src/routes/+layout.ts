@@ -8,7 +8,7 @@ export const prerender = false;
 
 export type User = { id: number; name: string; username: string; role: 'OWNER' | 'ADMIN' | 'TEKNISI' };
 
-const PUBLIC = ['/login', '/cek'];
+const PUBLIC = ['/login', '/cek', '/booking'];
 
 export const load: LayoutLoad = async ({ url, depends }) => {
 	depends('app:auth');

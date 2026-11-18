@@ -11,20 +11,23 @@
 
 body { @apply bg-slate-50 text-slate-800 antialiased; }
 
-.card { @apply bg-white rounded-xl border border-slate-200 shadow-sm; }
-.btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer; }
-.btn-primary { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-brand-600 text-white hover:bg-brand-700; }
-.btn-secondary { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50; }
-.btn-danger { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-rose-600 text-white hover:bg-rose-700; }
-.btn-success { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700; }
-.btn-wa { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-[#25D366] text-white hover:bg-[#1da851]; }
-.btn-sm { @apply px-2.5 py-1 text-xs; }
-.input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
-.label { @apply block text-xs font-medium text-slate-600 mb-1; }
-.table { @apply w-full text-sm; }
-.table th { @apply text-left font-medium text-slate-500 text-xs uppercase tracking-wide px-3 py-2 border-b border-slate-200 bg-slate-50; }
-.table td { @apply px-3 py-2.5 border-b border-slate-100 align-top; }
-.badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap; }
+/* Komponen dasar. Di dalam layer "components" supaya utility (mis. w-auto, px-6) tetap bisa menimpanya. */
+@layer components {
+  .card { @apply bg-white rounded-xl border border-slate-200 shadow-sm; }
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-white border border-slate-300 text-slate-700 hover:bg-slate-50; }
+  .btn-danger { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-rose-600 text-white hover:bg-rose-700; }
+  .btn-success { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-wa { @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50 cursor-pointer bg-[#25D366] text-white hover:bg-[#1da851]; }
+  .btn-sm { @apply px-2.5 py-1 text-xs; }
+  .input { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100; }
+  .label { @apply block text-xs font-medium text-slate-600 mb-1; }
+  .table { @apply w-full text-sm; }
+  .table th { @apply text-left font-medium text-slate-500 text-xs uppercase tracking-wide px-3 py-2 border-b border-slate-200 bg-slate-50; }
+  .table td { @apply px-3 py-2.5 border-b border-slate-100 align-top; }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap; }
+}
 
 @media print {
   .no-print { display: none !important; }

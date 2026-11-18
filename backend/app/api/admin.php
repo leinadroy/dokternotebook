@@ -80,7 +80,21 @@ function api_settings_update(): array
         'wa_template' => 'nullable|string|max:5000',
         'public_url' => 'nullable|url|max:255',
         'fonnte_token' => 'nullable|string|max:255',
+        'booking_enabled' => 'nullable|bool',
+        'booking_pickup' => 'nullable|bool',
+        'booking_slots' => 'nullable|string|max:500',
+        'booking_closed_days' => 'nullable|string|max:20',
+        'booking_intro' => 'nullable|string|max:1000',
+        'booking_wa_template' => 'nullable|string|max:2000',
     ]);
+    $d['booking_enabled'] = !empty($d['booking_enabled']) ? '1' : '0';
+    $d['booking_pickup'] = !empty($d['booking_pickup']) ? '1' : '0';
+    $slots = array_values(array_filter(array_map('trim', explode(',', (string) ($d['booking_slots'] ?? '')))));
+    if ($d['booking_enabled'] === '1' && !$slots) throw new HttpError(422, 'Isi minimal satu jam booking, mis. 09.00 - 12.00');
+    $d['booking_slots'] = implode(',', $slots);
+    $days = array_unique(array_filter(explode(',', preg_replace('/[^0-6,]/', '', (string) ($d['booking_closed_days'] ?? ''))), fn ($x) => $x !== ''));
+    sort($days);
+    $d['booking_closed_days'] = implode(',', $days);
     foreach (SETTING_KEYS as $k) {
         q('INSERT INTO settings (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)', [$k, (string) ($d[$k] ?? '')]);
     }
@@ -138,6 +152,9 @@ function api_health(): array
         $out['tables'] = (int) val('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()');
         $out['users'] = $out['tables'] ? (int) val('SELECT COUNT(*) FROM users') : 0;
         if ($out['tables'] < 9) $out['hint'] = 'Tabel belum lengkap. Import file database.sql lewat phpMyAdmin.';
+        elseif (!val("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = 'bookings'")) {
+            $out['hint'] = 'Tabel booking belum ada. Import file update-booking.sql lewat phpMyAdmin.';
+        }
     } catch (Throwable $e) {
         $out['database'] = 'GAGAL';
         $out['hint'] = $e->getMessage();

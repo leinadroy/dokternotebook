@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import StatusBadge from '$lib/components/StatusBadge.svelte';
-	import { STATUSES, STATUS_LABEL, rupiah, tgl } from '$lib/format';
+	import { BOOKING_COLOR, BOOKING_LABEL, isoDate, STATUSES, STATUS_LABEL, rupiah, tgl, tglHari } from '$lib/format';
 
 	let { data } = $props();
 	const d = $derived(data.dash);
@@ -69,6 +69,39 @@
 	</div>
 
 	<div class="space-y-6">
+		{#if d.bookings}
+			<div class="card p-4 {d.bookings.new ? 'border-amber-300 bg-amber-50/40' : ''}">
+				<div class="flex items-center justify-between mb-3">
+					<h2 class="font-semibold">Booking online</h2>
+					<a href="/booking-masuk" class="text-sm text-brand-600">Kelola →</a>
+				</div>
+				<div class="flex gap-4 text-sm mb-3">
+					<a href="/booking-masuk?status=BARU" class="flex-1 rounded-lg bg-white border border-slate-200 p-2 text-center">
+						<div class="text-xl font-bold {d.bookings.new ? 'text-amber-600' : ''}">{d.bookings.new}</div>
+						<div class="text-xs text-slate-500">perlu konfirmasi</div>
+					</a>
+					<a href="/booking-masuk?date={isoDate(new Date())}" class="flex-1 rounded-lg bg-white border border-slate-200 p-2 text-center">
+						<div class="text-xl font-bold">{d.bookings.today}</div>
+						<div class="text-xs text-slate-500">jadwal hari ini</div>
+					</a>
+				</div>
+				{#if d.bookings.upcoming.length}
+					<ul class="space-y-2 text-sm">
+						{#each d.bookings.upcoming as b (b.id)}
+							<li class="flex justify-between gap-2">
+								<a href="/booking-masuk?q={b.code}&status=SEMUA" class="min-w-0">
+									<div class="truncate font-medium">{b.name} <span class="badge {BOOKING_COLOR[b.status]} ml-1">{BOOKING_LABEL[b.status]}</span></div>
+									<div class="text-xs text-slate-500 truncate">{b.device_brand} {b.device_model ?? ''} · {b.problem_type}</div>
+								</a>
+								<div class="text-right text-xs text-slate-600 shrink-0">{tglHari(b.preferred_date)}<br />{b.preferred_time}</div>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="text-sm text-slate-500">Belum ada booking mendatang.</p>
+				{/if}
+			</div>
+		{/if}
 		<div class="card p-4">
 			<h2 class="font-semibold mb-3">Status servis</h2>
 			<div class="space-y-1">

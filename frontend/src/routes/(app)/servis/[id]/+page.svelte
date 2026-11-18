@@ -79,6 +79,13 @@
 						{s.warranty_days} hari
 						{#if w.until}<div class={w.active ? 'text-emerald-600' : 'text-slate-500'}>{w.active ? 'Aktif' : 'Habis'} s/d {tgl(w.until)}</div>{/if}
 					</div>
+					{#if s.booking}
+						<div>
+							<div class="text-xs text-slate-500">Dari booking online</div>
+							<a href="/booking-masuk?q={s.booking.code}&status=SEMUA" class="text-brand-600">{s.booking.code}</a>
+							<span class="text-slate-500">· {s.booking.service_method === 'JEMPUT' ? 'dijemput' : 'datang ke toko'}</span>
+						</div>
+					{/if}
 					{#if s.parent}
 						<div>
 							<div class="text-xs text-slate-500">Klaim dari nota</div>
