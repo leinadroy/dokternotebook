@@ -35,18 +35,21 @@ export async function api<T = any>(path: string, opts: { method?: string; body?:
 	};
 
 	if (method !== 'GET') await ensureCsrf();
+	const read = async (res: Response) => (res.status === 204 ? null : await res.json().catch(() => null));
 	let res: Response;
+	let data: any;
 	try {
 		res = await doFetch();
-		// 419 = token CSRF kedaluwarsa → ambil ulang lalu coba sekali lagi
-		if (res.status === 419) {
+		data = await read(res);
+		// token CSRF kedaluwarsa (419, atau 403 bertanda errors.csrf) → ambil token baru lalu coba sekali lagi
+		if (res.status === 419 || (res.status === 403 && data?.errors?.csrf)) {
 			await ensureCsrf(true);
 			res = await doFetch();
+			data = await read(res);
 		}
 	} catch {
 		return { ok: false, status: 0, data: { message: 'Server tidak dapat dihubungi. Periksa koneksi internet.' } as T };
 	}
-	const data = res.status === 204 ? null : await res.json().catch(() => null);
 	return { ok: res.ok, status: res.status, data };
 }
 

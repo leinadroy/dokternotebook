@@ -5,17 +5,33 @@ Aplikasi web manajemen **service center laptop / notebook** (satu cabang).
 | Bagian | Teknologi | Folder |
 |---|---|---|
 | Frontend | SvelteKit 2 (Svelte 5) + Tailwind CSS 4, dibuild jadi SPA statis | [`frontend/`](frontend) |
-| Backend (REST API) | PHP 8.2 · Laravel 12 · Sanctum (login sesi cookie) | [`backend/`](backend) |
+| Backend (REST API) | PHP biasa 8.0+ (tanpa framework, tanpa Composer) · PDO MySQL | [`backend/`](backend) |
 | Database | MySQL / MariaDB | — |
 
 ```
-Browser ──► Laravel (backend/public)
-              ├─ /api/*      REST API ──► MySQL
+Browser ──► backend/index.php
+              ├─ /api/*      REST API (app/api/*.php) ──► MySQL
               └─ selain itu  spa.html + /_app (hasil build SvelteKit)
-Login: cookie sesi httpOnly + proteksi CSRF (Sanctum SPA auth), satu domain.
+Login: cookie sesi PHP (httpOnly) + token CSRF (cookie XSRF-TOKEN ↔ header X-XSRF-TOKEN), satu domain.
 ```
 
-Di server **cukup PHP + MySQL** (cocok untuk shared hosting/cPanel), tidak perlu Node.js.
+Di server **cukup PHP + MySQL** (cocok untuk shared hosting/cPanel), tidak perlu Node.js maupun Composer.
+
+Struktur backend:
+
+```
+backend/
+  index.php           pintu masuk + daftar route API
+  .htaccess           rewrite ke index.php, blokir folder internal
+  config.example.php  contoh konfigurasi (salin jadi config.php)
+  app/bootstrap.php   koneksi DB, sesi, CSRF, helper JSON
+  app/validate.php    validasi input (pesan bahasa Indonesia)
+  app/domain.php      aturan bisnis: total biaya, garansi, nomor nota, WhatsApp
+  app/api/*.php       endpoint per modul
+  database/schema.sql struktur tabel
+  database/seed.php   isi data awal (CLI)
+  logs/               error.log & file sesi (tidak bisa diakses dari web)
+```
 
 ## Fitur
 
@@ -35,7 +51,7 @@ Di server **cukup PHP + MySQL** (cocok untuk shared hosting/cPanel), tidak perlu
 
 ## Kebutuhan
 
-- PHP 8.2+ dengan ekstensi `pdo_mysql`, Composer
+- PHP 8.0+ dengan ekstensi `pdo_mysql`
 - MySQL 5.7+ / MariaDB 10.4+ (mis. dari XAMPP)
 - Node.js 20+ (hanya di komputer development, untuk build frontend)
 
@@ -51,14 +67,14 @@ CREATE DATABASE dokternotebook CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 ```bash
 cd backend
-composer install
-cp .env.example .env      # sesuaikan DB_USERNAME / DB_PASSWORD
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve
+cp config.example.php config.php   # isi data database
+php database/seed.php --demo       # buat tabel + data contoh (tanpa --demo: hanya akun & pengaturan)
+php -S 127.0.0.1:8000 index.php
 ```
 
-**3. Frontend** (http://localhost:5300), di terminal lain. Vite meneruskan `/api` dan `/sanctum` ke Laravel di port 8000:
+Cek pemasangan: http://127.0.0.1:8000/api/health
+
+**3. Frontend** (http://localhost:5300), di terminal lain. Vite meneruskan `/api` dan `/sanctum` ke backend PHP di port 8000:
 
 ```bash
 cd frontend
@@ -66,7 +82,7 @@ npm install
 npm run dev
 ```
 
-**Build frontend ke Laravel** (hasil masuk ke `backend/public/_app` + `spa.html`, lalu aplikasi bisa dibuka langsung di http://127.0.0.1:8000):
+**Build frontend ke backend** (hasil masuk ke `backend/_app` + `backend/spa.html`, lalu aplikasi bisa dibuka langsung di http://127.0.0.1:8000):
 
 ```bash
 cd frontend
@@ -81,14 +97,17 @@ Akun awal (data seed, **ganti password setelah login** lewat menu "Ganti passwor
 | Admin/Kasir | admin | admin123 |
 | Teknisi | budi / andi | teknisi123 |
 
-Reset database ke data awal: `php artisan migrate:fresh --seed` (di folder `backend`).
+Reset database ke data awal: `php database/seed.php --demo` (di folder `backend`). **Semua data dihapus.**
 
-## Produksi
+## Produksi (shared hosting / cPanel)
 
-- **Shared hosting (cPanel):** jalankan `npm run build` di `frontend`, lalu `composer install --no-dev --optimize-autoloader` di salinan folder `backend`. Upload, import SQL lewat phpMyAdmin, dan isi `.env` (`APP_ENV=production`, `APP_DEBUG=false`, `APP_URL`, `DB_*`). Arahkan document root ke `backend/public`. Langkah lengkapnya ada di `PANDUAN-UPLOAD.txt` di dalam zip hosting.
-- **VPS:** sama seperti di atas, ditambah `php artisan config:cache route:cache`.
-- Di menu **Pengaturan**, isi **Alamat web aplikasi** (dipakai untuk link & QR cek status di nota dan pesan WA).
-- Backup rutin database MySQL (mis. `mysqldump dokternotebook > backup.sql`).
+1. `npm run build` di folder `frontend`.
+2. Upload isi folder `backend/` (tanpa `logs/*.log` dan `logs/sessions`) ke document root domain.
+3. Buat database di cPanel, import `database/schema.sql` + data awal (atau file `database.sql` dari zip hosting) lewat phpMyAdmin.
+4. Isi `config.php` (data database, `debug` = `false`).
+5. Buka `/api/health` untuk memastikan semuanya OK.
+
+Langkah lengkap untuk pengguna ada di `PANDUAN-UPLOAD.txt` di dalam zip hosting. Backup database secara rutin (phpMyAdmin > Export).
 
 ## Ringkasan API
 
@@ -96,7 +115,7 @@ Semua endpoint di bawah `/api`. Login memakai cookie sesi; request yang mengubah
 
 | Akses | Endpoint |
 |---|---|
-| Publik | `GET /sanctum/csrf-cookie`, `POST /login`, `GET /public/settings`, `GET /public/cek?nota=&hp=` |
+| Publik | `GET /health`, `GET /sanctum/csrf-cookie` (di luar /api), `POST /login`, `GET /public/settings`, `GET /public/cek?nota=&hp=` |
 | Semua staf | `GET /me`, `POST /logout`, `POST /me/password`, `GET /dashboard`, `GET /technicians`, `GET /services`, `GET/PUT /services/{id}`, `POST /services/{id}/status`, `POST /services/{id}/items`, `DELETE /items/{id}`, `GET /customers`, `GET /customers/lookup`, `GET /customers/{id}`, `GET /spareparts`, `GET /stock-movements` |
 | Pemilik & Admin | `POST /services`, `POST /services/{id}/payments`, `PUT /customers/{id}`, `POST/PUT /spareparts`, `POST /spareparts/{id}/stock`, `GET /warranty`, `GET /reports` |
 | Pemilik | `DELETE /payments/{id}`, `DELETE /spareparts/{id}`, `GET/POST/PUT /users`, `GET/PUT /settings` |

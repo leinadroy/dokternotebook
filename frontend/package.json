@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev --port 5300",
-    "build": "vite build && node scripts/copy-to-laravel.mjs",
+    "build": "vite build && node scripts/copy-to-backend.mjs",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },

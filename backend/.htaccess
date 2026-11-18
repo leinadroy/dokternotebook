@@ -1,0 +1,39 @@
+# Dokter Notebook — pengaturan web server (Apache / LiteSpeed)
+<IfModule mod_negotiation.c>
+    Options -MultiViews -Indexes
+</IfModule>
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Teruskan header token CSRF ke PHP
+    RewriteCond %{HTTP:X-XSRF-Token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Blokir akses langsung ke kode & data internal
+    RewriteRule ^(app|database|logs)(/.*)?$ - [F,L,NC]
+    RewriteRule ^(config\.php|config\.example\.php)$ - [F,L,NC]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+    # File yang ada (gambar, _app/*.js, dll) dilayani langsung; sisanya ke index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<FilesMatch "^(config|config\.example)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Aset hasil build boleh di-cache lama (nama file berubah tiap build)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|woff2?)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
